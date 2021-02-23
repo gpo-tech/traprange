@@ -5,7 +5,7 @@
  */
 package com.giaybac.traprange.test;
 
-import com.giaybac.traprange.TrapRangeBuilder;
+import com.giaybac.traprange.services.TrapRangeBuilder;
 import com.google.common.collect.Range;
 import java.io.File;
 import java.io.IOException;
@@ -45,7 +45,7 @@ public class TESTPDFBox extends PDFTextStripper {
         PDPage page = pdDocument.getPage(0);
 
         this.processPage(page);
-        //Print out all text    
+        //Print out all text
         Collections.sort(ranges, new Comparator<Range>() {
             @Override
             public int compare(Range o1, Range o2) {

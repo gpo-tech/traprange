@@ -3,7 +3,7 @@
  *
  * Released under the MIT license
  */
-package com.giaybac.traprange;
+package com.giaybac.traprange.services;
 
 import com.google.common.collect.Range;
 import java.util.ArrayList;

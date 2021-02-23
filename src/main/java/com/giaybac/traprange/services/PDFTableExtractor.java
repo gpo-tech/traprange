@@ -3,7 +3,7 @@
  *
  * Released under the MIT license
  */
-package com.giaybac.traprange;
+package com.giaybac.traprange.services;
 
 import com.giaybac.traprange.entity.Table;
 import com.giaybac.traprange.entity.TableCell;
