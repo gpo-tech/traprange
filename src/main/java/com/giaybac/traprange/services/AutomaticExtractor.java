@@ -3,10 +3,10 @@ package com.giaybac.traprange.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ManualExtractor extends AbstractExtractor {
+public class AutomaticExtractor extends AbstractExtractor {
     private static final Logger logger = LoggerFactory.getLogger(ManualExtractor.class);
 
-    public ManualExtractor(String[] args) {
+    public AutomaticExtractor(String[] args) {
         super(args);
     }
 }

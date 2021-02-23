@@ -5,12 +5,16 @@
 */
 package com.giaybac.traprange;
 
+import com.giaybac.traprange.services.AutomaticExtractor;
+import com.giaybac.traprange.services.IExtractor;
+import com.giaybac.traprange.services.ManualExtractor;
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.giaybac.traprange.services.CliArgUtils.*;
-import static com.giaybac.traprange.services.ManualExtractor.extractTables;
+import java.util.Arrays;
+
+import static com.giaybac.traprange.services.CliArgUtils.printHelp;
 
 /**
  *
@@ -36,7 +40,16 @@ public class Application {
         if (args.length == 1 && "-h".equals(args[0])) {
             printHelp();
         } else {
-            extractTables(args);
+            resolveExtractor(args).extractTables();
         }
+    }
+
+    private static IExtractor resolveExtractor(String[] args) {
+        if (Arrays.asList(args).contains("-auto")) {
+            logger.debug("Running AutomaticExtractor");
+            return new AutomaticExtractor(args);
+        }
+        logger.debug("Running ManualExtractor");
+        return new ManualExtractor(args);
     }
 }
