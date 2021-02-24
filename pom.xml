@@ -51,7 +51,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.giaybac.traprange.MAIN</mainClass>
+                            <mainClass>com.giaybac.traprange.Application</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

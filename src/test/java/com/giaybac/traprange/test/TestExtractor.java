@@ -5,7 +5,7 @@
  */
 package com.giaybac.traprange.test;
 
-import com.giaybac.traprange.PDFTableExtractor;
+import com.giaybac.traprange.services.PDFTableExtractor;
 import com.giaybac.traprange.entity.Table;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,7 +30,7 @@ public class TestExtractor {
 
         String sourceDirectory = Paths.get(homeDirectory, "_Docs").toString();
         String resultDirectory = Paths.get(homeDirectory, "_Docs", "result").toString();
-        
+
         for (int idx = 0; idx < 5; idx++) {
             PDFTableExtractor extractor = (new PDFTableExtractor())
                     .setSource(sourceDirectory + File.separator + "sample-" + (idx + 1) + ".pdf");

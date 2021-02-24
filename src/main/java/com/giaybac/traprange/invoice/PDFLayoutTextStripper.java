@@ -78,7 +78,7 @@ public class PDFLayoutTextStripper extends PDFTextStripper {
     public PDFLayoutTextStripper() throws IOException {
         super();
         this.previousTextPosition = null;
-        this.textLineList = new ArrayList<TextLine>();
+        this.textLineList = new ArrayList<>();
     }
 
     /**

@@ -3,7 +3,7 @@
  *
  * Released under the MIT license
  */
-package com.giaybac.traprange;
+package com.giaybac.traprange.services;
 
 import com.google.common.collect.Range;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public class TrapRangeBuilder {
             }
         }
         //debug
-        logger.debug("Found " + retVal.size() + " trap-range(s)");
+        logger.info("Found " + retVal.size() + " trap-range(s)");
         //return
         return retVal;
     }
