@@ -1,5 +1,9 @@
 package com.giaybac.traprange.services;
 
+import com.giaybac.traprange.entity.Table;
+
+import java.util.List;
+
 public interface IExtractor {
-    void extractTables();
+    List<Table> extract();
 }

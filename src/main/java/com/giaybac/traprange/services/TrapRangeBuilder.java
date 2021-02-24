@@ -50,7 +50,7 @@ public class TrapRangeBuilder {
             }
         }
         //debug
-        logger.debug("Found " + retVal.size() + " trap-range(s)");
+        logger.info("Found " + retVal.size() + " trap-range(s)");
         //return
         return retVal;
     }

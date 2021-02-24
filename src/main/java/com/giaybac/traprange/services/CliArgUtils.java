@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CliArgUtils {
@@ -116,5 +117,9 @@ public class CliArgUtils {
 
     public static String getArg(String[] args, String name) {
         return getArg(args, name, null);
+    }
+
+    public static boolean isAutomatic(String[] args) {
+        return Arrays.asList(args).contains("-auto");
     }
 }

@@ -28,6 +28,17 @@ public class TableRow {
         return cells;
     }
 
+    public void cleanCell() {
+        for (TableCell cell: cells) {
+            String text = cell.getContent().replace("$", "").trim();
+            if (text.isBlank()) {
+                cell.setContent("");
+            } else {
+                cell.setContent(text);
+            }
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder retVal = new StringBuilder();

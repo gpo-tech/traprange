@@ -12,6 +12,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
+import com.google.common.primitives.Ints;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
@@ -28,20 +29,21 @@ import java.util.List;
  *
  * @author Tho Mar 22, 2015 3:34:29 PM
  */
-public class PDFTableExtractor {
+public class PDFTableExtractor implements IExtractor {
     private final Logger logger = LoggerFactory.getLogger(PDFTableExtractor.class);
     //contains pages that will be extracted table content.
     //If this variable doesn't contain any page, all pages will be extracted
-    private final List<Integer> extractedPages = new ArrayList<>();
-    private final List<Integer> exceptedPages = new ArrayList<>();
+    protected final List<Integer> extractedPages = new ArrayList<>();
+    protected final List<Integer> exceptedPages = new ArrayList<>();
     //contains avoided line idx-s for each page,
     //if this multimap contains only one element and key of this element equals -1
     //then all lines in extracted pages contains in multi-map value will be avoided
-    private final Multimap<Integer, Integer> pageNExceptedLinesMap = HashMultimap.create();
+    protected Multimap<Integer, Integer> pageNExceptedLinesMap = HashMultimap.create();
+    protected String filePath = null;
 
-    private InputStream inputStream;
-    private PDDocument document;
-    private String password;
+    protected InputStream inputStream;
+    protected PDDocument document;
+    protected String password;
 
     public PDFTableExtractor setSource(InputStream inputStream) {
         this.inputStream = inputStream;
@@ -63,18 +65,19 @@ public class PDFTableExtractor {
     }
 
     public PDFTableExtractor setSource(String filePath) {
+        this.filePath = filePath;
         return this.setSource(new File(filePath));
     }
 
-    public PDFTableExtractor setSource(File file,String password) {
+    public PDFTableExtractor setSource(File file, String password) {
         try {
-            return this.setSource(new FileInputStream(file),password);
+            return this.setSource(new FileInputStream(file), password);
         } catch (FileNotFoundException ex) {
             throw new RuntimeException("Invalid pdf file", ex);
         }
     }
 
-    public PDFTableExtractor setSource(String filePath,String password) {
+    public PDFTableExtractor setSource(String filePath, String password) {
         return this.setSource(new File(filePath),password);
     }
 
@@ -85,6 +88,12 @@ public class PDFTableExtractor {
      * @return
      */
     public PDFTableExtractor addPage(int pageIdx) {
+        extractedPages.add(pageIdx);
+        return this;
+    }
+
+    public PDFTableExtractor setPage(int pageIdx) {
+        extractedPages.clear();
         extractedPages.add(pageIdx);
         return this;
     }
@@ -126,32 +135,37 @@ public class PDFTableExtractor {
         Multimap<Integer, Range<Integer>> pageIdNLineRangesMap = LinkedListMultimap.create();
         Multimap<Integer, TextPosition> pageIdNTextsMap = LinkedListMultimap.create();
         try {
-            this.document = this.password!=null?PDDocument.load(inputStream,this.password):PDDocument.load(inputStream);
+            this.document = this.password !=null ? PDDocument.load(inputStream, this.password) : PDDocument.load(inputStream);
             for (int pageId = 0; pageId < document.getNumberOfPages(); pageId++) {
-                boolean b = !exceptedPages.contains(pageId) && (extractedPages.isEmpty() || extractedPages.contains(pageId));
-                if (b) {
-                    List<TextPosition> texts = extractTextPositions(pageId);//sorted by .getY() ASC
-                    //extract line ranges
-                    List<Range<Integer>> lineRanges = getLineRanges(pageId, texts);
-                    //extract column ranges
-                    List<TextPosition> textsByLineRanges = getTextsByLineRanges(lineRanges, texts);
+                if (exceptedPages.contains(pageId) || (!extractedPages.isEmpty() && !extractedPages.contains(pageId)))
+                    continue;
 
-                    pageIdNLineRangesMap.putAll(pageId, lineRanges);
-                    pageIdNTextsMap.putAll(pageId, textsByLineRanges);
-                }
+                List<TextPosition> texts = extractTextPositions(pageId);//sorted by .getY() ASC
+                //extract line ranges
+                List<Range<Integer>> lineRanges = getLineRanges(pageId, texts);
+                //extract column ranges
+                List<TextPosition> textsByLineRanges = getTextsByLineRanges(lineRanges, texts);
+
+                pageIdNLineRangesMap.putAll(pageId, lineRanges);
+                pageIdNTextsMap.putAll(pageId, textsByLineRanges);
             }
             //Calculate columnRanges
             List<Range<Integer>> columnRanges = getColumnRanges(pageIdNTextsMap.values());
             for (int pageId : pageIdNTextsMap.keySet()) {
                 Table table = buildTable(pageId, (List) pageIdNTextsMap.get(pageId), (List) pageIdNLineRangesMap.get(pageId), columnRanges);
                 retVal.add(table);
-                //debug
-                logger.debug("Found " + table.getRows().size() + " row(s) and " + columnRanges.size()
+                logger.info("Found " + table.getRows().size() + " row(s) and " + columnRanges.size()
                         + " column(s) of a table in page " + pageId);
             }
         } catch (IOException ex) {
+            ex.printStackTrace();
             throw new RuntimeException("Parse pdf file fail", ex);
         } finally {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             if (this.document != null) {
                 try {
                     this.document.close();
@@ -160,7 +174,6 @@ public class PDFTableExtractor {
                 }
             }
         }
-        //return
         return retVal;
     }
 
@@ -173,7 +186,7 @@ public class PDFTableExtractor {
      * @param columnTrapRanges
      * @return
      */
-    private Table buildTable(int pageIdx, List<TextPosition> tableContent,
+    protected Table buildTable(int pageIdx, List<TextPosition> tableContent,
             List<Range<Integer>> rowTrapRanges, List<Range<Integer>> columnTrapRanges) {
         Table retVal = new Table(pageIdx, columnTrapRanges.size());
         int idx = 0;
@@ -200,7 +213,6 @@ public class PDFTableExtractor {
             TableRow row = buildRow(rowIdx, rowContent, columnTrapRanges);
             retVal.getRows().add(row);
         }
-        //return
         return retVal;
     }
 
@@ -213,7 +225,6 @@ public class PDFTableExtractor {
      */
     private TableRow buildRow(int rowIdx, List<TextPosition> rowContent, List<Range<Integer>> columnTrapRanges) {
         TableRow retVal = new TableRow(rowIdx);
-        //Sort rowContent
         sortCellContent(rowContent);
         int idx = 0;
         int columnIdx = 0;
@@ -229,7 +240,6 @@ public class PDFTableExtractor {
             } else {
                 TableCell cell = buildCell(columnIdx, cellContent);
                 retVal.getCells().add(cell);
-                //next column: clear cell content
                 cellContent.clear();
                 columnIdx++;
             }
@@ -244,7 +254,6 @@ public class PDFTableExtractor {
 
     private TableCell buildCell(int columnIdx, List<TextPosition> cellContent) {
         sortCellContent(cellContent);
-        //String cellContentString = Joiner.on("").join(cellContent.stream().map(e -> e.getCharacter()).iterator());
         StringBuilder cellContentBuilder = new StringBuilder();
         for (TextPosition textPosition : cellContent) {
             cellContentBuilder.append(textPosition.getUnicode());
@@ -265,7 +274,7 @@ public class PDFTableExtractor {
         });
     }
 
-    private List<TextPosition> extractTextPositions(int pageId) throws IOException {
+    protected List<TextPosition> extractTextPositions(int pageId) throws IOException {
         TextPositionExtractor extractor = new TextPositionExtractor(document, pageId);
         return extractor.extract();
     }
@@ -285,7 +294,7 @@ public class PDFTableExtractor {
      * @param textPositions
      * @return
      */
-    private List<TextPosition> getTextsByLineRanges(List<Range<Integer>> lineRanges, List<TextPosition> textPositions) {
+    protected List<TextPosition> getTextsByLineRanges(List<Range<Integer>> lineRanges, List<TextPosition> textPositions) {
         List<TextPosition> retVal = new ArrayList<>();
         int idx = 0;
         int lineIdx = 0;
@@ -310,7 +319,7 @@ public class PDFTableExtractor {
      * @param texts
      * @return
      */
-    private List<Range<Integer>> getColumnRanges(Collection<TextPosition> texts) {
+    protected List<Range<Integer>> getColumnRanges(Collection<TextPosition> texts) {
         TrapRangeBuilder rangesBuilder = new TrapRangeBuilder();
         for (TextPosition text : texts) {
             Range<Integer> range = Range.closed((int) text.getX(), (int) (text.getX() + text.getWidth()));
@@ -319,7 +328,7 @@ public class PDFTableExtractor {
         return rangesBuilder.build();
     }
 
-    private List<Range<Integer>> getLineRanges(int pageId, List<TextPosition> pageContent) {
+    protected List<Range<Integer>> getLineRanges(int pageId, List<TextPosition> pageContent) {
         TrapRangeBuilder lineTrapRangeBuilder = new TrapRangeBuilder();
         for (TextPosition textPosition : pageContent) {
             Range<Integer> lineRange = Range.closed((int) textPosition.getY(),
@@ -341,6 +350,28 @@ public class PDFTableExtractor {
             }
         }
         return retVal;
+    }
+
+    protected void setExceptLines(List<Integer[]> fromArgs) {
+        List<Integer> exceptLineIdxes = new ArrayList<>();
+        Multimap<Integer, Integer> exceptLineInPages = LinkedListMultimap.create();
+        for (Integer[] exceptLine: fromArgs) {
+            if (exceptLine.length == 1) {
+                exceptLineIdxes.add(exceptLine[0]);
+            } else if (exceptLine.length == 2) {
+                int lineIdx = exceptLine[0];
+                int pageIdx = exceptLine[1];
+                exceptLineInPages.put(pageIdx, lineIdx);
+            }
+        }
+        if (!exceptLineIdxes.isEmpty()) {
+            exceptLine(Ints.toArray(exceptLineIdxes));
+        }
+        if (!exceptLineInPages.isEmpty()) {
+            for (int pageIdx: exceptLineInPages.keySet()) {
+                exceptLine(pageIdx, Ints.toArray(exceptLineInPages.get(pageIdx)));
+            }
+        }
     }
 
     private static class TextPositionExtractor extends PDFTextStripper {
