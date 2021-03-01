@@ -40,14 +40,14 @@ public class Table {
         return toString(false);
     }
 
-    private void cleanEmptyRows() {
+    public void cleanEmptyRows() {
         for (TableRow row: rows) {
             row.cleanCell();
         }
     }
 
     private String toString(boolean inHtmlFormat) {
-        cleanEmptyRows();
+//        cleanEmptyRows();
         StringBuilder retVal = new StringBuilder();
         if (inHtmlFormat) {
             retVal.append("<!DOCTYPE html>"
